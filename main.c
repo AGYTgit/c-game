@@ -1,16 +1,27 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 
-// Screen dimensions
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-// Set the desired FPS
 const int FPS = 240;
-const int FRAME_TIME = 1000 / FPS; // Time per frame in milliseconds
+const double FRAME_TIME = 1000.0f / FPS;
 
 float calcFPS(float elapsedTime) {
     return 1000.0f / elapsedTime;
+}
+
+// Function to draw a filled circle
+void DrawCircle(SDL_Renderer* renderer, int centerX, int centerY, int radius) {
+    for (int w = 0; w < radius * 2; w++) {
+        for (int h = 0; h < radius * 2; h++) {
+            int dx = radius - w; // horizontal offset
+            int dy = radius - h; // vertical offset
+            if ((dx * dx + dy * dy) <= (radius * radius)) {
+                SDL_RenderDrawPoint(renderer, centerX + dx, centerY + dy);
+            }
+        }
+    }
 }
 
 int main(int argc, char* args[]) {
@@ -41,8 +52,12 @@ int main(int argc, char* args[]) {
         return -1;
     }
 
-    // Set the background color (light blue)
-    SDL_SetRenderDrawColor(renderer, 173, 216, 230, 255);
+
+    int rectWidth = 100;
+    int rectHeight = 100;
+
+    // define rect
+    SDL_Rect rect = { (SCREEN_WIDTH - rectWidth)/2, (SCREEN_HEIGHT - rectHeight)/2, 100, 100 };
 
     // Initialize performance counters
     Uint64 startTicks = SDL_GetPerformanceCounter();
@@ -71,12 +86,21 @@ int main(int argc, char* args[]) {
                 if (e.key.keysym.sym == SDLK_ESCAPE) {
                     quit = 1;
                 }
+
+                if (e.key.keysym.sym == SDLK_SPACE) {
+                    rect.x = (rect.x + 1) % SCREEN_WIDTH;
+                }
             }
         }
 
         if (elapsedTime >= FRAME_TIME) {
-            SDL_RenderClear(renderer);
             SDL_RenderPresent(renderer);
+
+            SDL_SetRenderDrawColor(renderer, 11, 10, 15, 255);
+            SDL_RenderClear(renderer);
+            SDL_SetRenderDrawColor(renderer, 0, 200, 240, 255);
+            SDL_RenderFillRect(renderer, &rect);
+            // DrawCircle(renderer, 200, 200, 100);
 
             printf("FPS: %.2f, %f\n", calcFPS(elapsedTime), elapsedTime);
 
