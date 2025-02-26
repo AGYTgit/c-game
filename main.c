@@ -1,117 +1,136 @@
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_events.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+int SCREEN_WIDTH = 640;
+int SCREEN_HEIGHT = 480;
 
-const int FPS = 240;
-const double FRAME_TIME = 1000.0f / FPS;
+const int BG_R = 11;
+const int BG_G = 10;
+const int BG_B = 15;
+const int BG_O = 255;
 
-float calcFPS(float elapsedTime) {
-    return 1000.0f / elapsedTime;
+
+typedef struct square {
+    float x;
+    float y;
+    float w;
+    float h;
+
+    float vx;
+    float vy;
+
+    int r;
+    int g;
+    int b;
+} Square;
+Square* sPtr;
+int sPtrLen = 0;
+const int sPtrMaxLen = 2<<6;
+
+
+void addSqr(float x, float y, float w, float h, float vx, float vy) {
+    sPtr[sPtrLen++] = (Square){x, y, w, h, vx, vy, rand() % 256, rand() % 256, rand() % 256};
 }
 
-// Function to draw a filled circle
-void DrawCircle(SDL_Renderer* renderer, int centerX, int centerY, int radius) {
-    for (int w = 0; w < radius * 2; w++) {
-        for (int h = 0; h < radius * 2; h++) {
-            int dx = radius - w; // horizontal offset
-            int dy = radius - h; // vertical offset
-            if ((dx * dx + dy * dy) <= (radius * radius)) {
-                SDL_RenderDrawPoint(renderer, centerX + dx, centerY + dy);
-            }
-        }
-    }
-}
+int main(int argc, char* argv[]) {
+    srand(time(NULL));
 
-int main(int argc, char* args[]) {
-    // Initialize SDL
+    sPtr = (Square*)malloc(sPtrMaxLen * sizeof(Square));
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-        return -1;
+        SDL_Log("SDL_Init Error: %s", SDL_GetError());
+        return 1;
     }
 
-    // Create a window
-    SDL_Window* window = SDL_CreateWindow("SDL Window Example",
-                                          SDL_WINDOWPOS_UNDEFINED,
-                                          SDL_WINDOWPOS_UNDEFINED,
-                                          SCREEN_WIDTH, SCREEN_HEIGHT,
-                                          SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+    SDL_Window* window = SDL_CreateWindow("SDL3 Window", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
     if (window == NULL) {
-        printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        SDL_Log("SDL_CreateWindow Error: %s", SDL_GetError());
         SDL_Quit();
-        return -1;
+        return 1;
     }
 
-    // Create a renderer for the window
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
     if (renderer == NULL) {
-        printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+        SDL_Log("SDL_CreateRenderer Error: %s", SDL_GetError());
         SDL_DestroyWindow(window);
         SDL_Quit();
-        return -1;
+        return 1;
     }
 
-
-    int rectWidth = 100;
-    int rectHeight = 100;
-
-    // define rect
-    SDL_Rect rect = { (SCREEN_WIDTH - rectWidth)/2, (SCREEN_HEIGHT - rectHeight)/2, 100, 100 };
-
-    // Initialize performance counters
-    Uint64 startTicks = SDL_GetPerformanceCounter();
-    Uint64 frequency = SDL_GetPerformanceFrequency();
+    SDL_Event event;
     int quit = 0;
-    SDL_Event e;
 
-    // Track the number of frames and the time for FPS calculation
-    int frameCount = 0;
-    float fps = 0.0f;
+    addSqr(SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT / 2 - 25, 50, 50, 1, 1);
 
-    // Main loop flag
     while (!quit) {
-        // Get current time in ticks
-        Uint64 currentTicks = SDL_GetPerformanceCounter();
+        float loopStartTime = SDL_GetTicks();
 
-        // Calculate the time elapsed in milliseconds
-        float elapsedTime = (float)(currentTicks - startTicks) / (float)frequency * 1000.0f;
-
-        while (SDL_PollEvent(&e) != 0) {
-            if (e.type == SDL_QUIT) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_EVENT_QUIT) {
                 quit = 1;
+            } else if (event.type == SDL_EVENT_KEY_DOWN && event.key.scancode == SDL_SCANCODE_ESCAPE) {
+                quit = 1;
+            } else if (event.type = SDL_EVENT_WINDOW_RESIZED) {
+                SDL_GetWindowSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
             }
+        }
 
-            if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.sym == SDLK_ESCAPE) {
-                    quit = 1;
+        for (int i = 0; i < sPtrLen; i++) {
+            if (sPtr[i].x <= 0) {
+                sPtr[i].vx = abs(sPtr[i].vx);
+                sPtr[i].x++;
+                if (sPtrLen <= sPtrMaxLen) {
+                    addSqr(sPtr[i].x, sPtr[i].y, sPtr[i].w, sPtr[i].h, sPtr[i].vx, sPtr[i].vy * -1);
                 }
-
-                if (e.key.keysym.sym == SDLK_SPACE) {
-                    rect.x = (rect.x + 1) % SCREEN_WIDTH;
+            } else if (sPtr[i].x >= (SCREEN_WIDTH - sPtr[i].w)) {
+                sPtr[i].vx = abs(sPtr[i].vx) * -1;
+                sPtr[i].x--;
+                if (sPtrLen <= sPtrMaxLen) {
+                    addSqr(sPtr[i].x, sPtr[i].y, sPtr[i].w, sPtr[i].h, sPtr[i].vx, sPtr[i].vy * -1);
+                }
+            }
+            if (sPtr[i].y <= 0) {
+                sPtr[i].vy = abs(sPtr[i].vy);
+                sPtr[i].y++;
+                if (sPtrLen <= sPtrMaxLen) {
+                    addSqr(sPtr[i].x, sPtr[i].y, sPtr[i].w, sPtr[i].h, sPtr[i].vx * -1, sPtr[i].vy);
+                }
+            } else if (sPtr[i].y >= (SCREEN_HEIGHT - sPtr[i].h)) {
+                sPtr[i].vy = abs(sPtr[i].vy) * -1;
+                sPtr[i].y--;
+                if (sPtrLen <= sPtrMaxLen) {
+                    addSqr(sPtr[i].x, sPtr[i].y, sPtr[i].w, sPtr[i].h, sPtr[i].vx * -1, sPtr[i].vy);
                 }
             }
         }
 
-        if (elapsedTime >= FRAME_TIME) {
-            SDL_RenderPresent(renderer);
+        for (int i = 0; i < sPtrLen; i++) {
+            sPtr[i].x += sPtr[i].vx;
+            sPtr[i].y += sPtr[i].vy;
+        }
 
-            SDL_SetRenderDrawColor(renderer, 11, 10, 15, 255);
-            SDL_RenderClear(renderer);
-            SDL_SetRenderDrawColor(renderer, 0, 200, 240, 255);
+        SDL_SetRenderDrawColor(renderer, BG_R, BG_G, BG_B, BG_O);
+        SDL_RenderClear(renderer);
+
+        for (int i = 0; i < sPtrLen; i++) {
+            SDL_SetRenderDrawColor(renderer, sPtr[i].r, sPtr[i].g, sPtr[i].b, 255);
+            SDL_FRect rect = (SDL_FRect){sPtr[i].x, sPtr[i].y ,sPtr[i].w ,sPtr[i].h};
             SDL_RenderFillRect(renderer, &rect);
-            // DrawCircle(renderer, 200, 200, 100);
-
-            printf("FPS: %.2f, %f\n", calcFPS(elapsedTime), elapsedTime);
-
-            startTicks = SDL_GetPerformanceCounter();
         }
+
+        SDL_RenderPresent(renderer);
+
+        SDL_Delay(1);
     }
 
-    // Cleanup
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+
+    free(sPtr);
 
     return 0;
 }
