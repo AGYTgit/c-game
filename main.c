@@ -78,29 +78,26 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        for (int i = 0; i < sPtrLen; i++) {
-            if (sPtr[i].x <= 0) {
-                sPtr[i].vx = abs(sPtr[i].vx);
-                sPtr[i].x++;
+        int sPtrLenTemp = sPtrLen;
+        for (int i = 0; i < sPtrLenTemp; i++) {
+            if (sPtr[i].x <= 0 && sPtr[i].vx < 0) {
+                sPtr[i].vx *= -1;
                 if (sPtrLen <= sPtrMaxLen) {
                     addSqr(sPtr[i].x, sPtr[i].y, sPtr[i].w, sPtr[i].h, sPtr[i].vx, sPtr[i].vy * -1);
                 }
-            } else if (sPtr[i].x >= (SCREEN_WIDTH - sPtr[i].w)) {
-                sPtr[i].vx = abs(sPtr[i].vx) * -1;
-                sPtr[i].x--;
+            } else if (sPtr[i].x >= (SCREEN_WIDTH - sPtr[i].w) && sPtr[i].x > 0) {
+                sPtr[i].vx *= -1;
                 if (sPtrLen <= sPtrMaxLen) {
                     addSqr(sPtr[i].x, sPtr[i].y, sPtr[i].w, sPtr[i].h, sPtr[i].vx, sPtr[i].vy * -1);
                 }
             }
-            if (sPtr[i].y <= 0) {
-                sPtr[i].vy = abs(sPtr[i].vy);
-                sPtr[i].y++;
+            if (sPtr[i].y <= 0 && sPtr[i].vy < 0) {
+                sPtr[i].vy *= -1;
                 if (sPtrLen <= sPtrMaxLen) {
                     addSqr(sPtr[i].x, sPtr[i].y, sPtr[i].w, sPtr[i].h, sPtr[i].vx * -1, sPtr[i].vy);
                 }
-            } else if (sPtr[i].y >= (SCREEN_HEIGHT - sPtr[i].h)) {
-                sPtr[i].vy = abs(sPtr[i].vy) * -1;
-                sPtr[i].y--;
+            } else if (sPtr[i].y >= (SCREEN_HEIGHT - sPtr[i].h) && sPtr[i].vy > 0) {
+                sPtr[i].vy *= -1;
                 if (sPtrLen <= sPtrMaxLen) {
                     addSqr(sPtr[i].x, sPtr[i].y, sPtr[i].w, sPtr[i].h, sPtr[i].vx * -1, sPtr[i].vy);
                 }
